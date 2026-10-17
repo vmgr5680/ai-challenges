@@ -1,0 +1,33 @@
+# Real outputs, run 2026-10-17 on macOS (Apple M1 Max), bundled CLI 2.1.211 / 2.1.212
+
+$ python3 reproduce.py
+SDK 0.2.120, resume='--version'
+  argv tokens : ['--resume', '--version']
+  standalone '--version' token in argv: True
+  bundled CLI : exit 0, output: '2.1.211 (Claude Code)'
+  -> the 'session ID' was parsed as a flag; no session was resumed
+
+$ python3 fix.py
+SDK 0.2.121, resume='--version'
+  argv tokens : ['--resume=--version']
+  standalone '--version' token in argv: False
+  bundled CLI : exit 1, output: 'Error: --resume requires a valid session ID or session title when used with --print. Usage: claude -p --resume <session-id|title>. Provided value "--version" is not a UUID and does not match any session title.'
+
+safe_resume_id() for user 'alice':
+  '--version'                                rejected (not a session UUID)
+  '-r'                                       rejected (not a session UUID)
+  'release-notes'                            rejected (not a session UUID)
+  '550e8400-e29b-41d4-a716-446655440000'     rejected (session not found for this user)
+  '8f8b1c0e-2b1e-4a3f-9c2d-5e6f7a8b9c0d'     ok -> 8f8b1c0e-2b1e-4a3f-9c2d-5e6f7a8b9c0d
+
+$ python3 detect.py .
+AFFECTED  claude-agent-sdk 0.2.120 (Python) in .venv-0.2.120/lib/python3.12/site-packages  -> upgrade
+NOTE      claude-agent-sdk 0.2.121 (Python) in .venv-0.2.121/lib/python3.12/site-packages  -> fixed for resume; extra_args binding fixed in 0.2.124
+REVIEW    examples/resume_endpoint.py:12  resume = body['session_id']  (where does this value come from?)
+REVIEW    examples/resume_endpoint.ts:7  resume = req.sessionId  (where does this value come from?)
+(exit 1)
+
+$ python3 -m unittest discover -s tests
+Ran 11 tests in 2.001s
+
+OK

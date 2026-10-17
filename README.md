@@ -1,4 +1,4 @@
-# ai-issues
+# ai-challenges
 
 Companion code for the "AI issues" Medium articles: one real, current problem in the AI ecosystem per folder, reproduced locally, with a fix, a detection check and tests. Everything runs without API keys; most folders run fully offline (2026-10-16 needs a local Ollama server for the live runs, its tests run offline). Security issues are covered only after an advisory or fix is public, and reproductions run in-process against a fake model, never against real services.
 
@@ -9,5 +9,6 @@ Companion code for the "AI issues" Medium articles: one real, current problem in
 | 2026-10-14 | [`2026-10-14-stream-retry-gap/`](2026-10-14-stream-retry-gap/) | LiteLLM Router `num_retries` does not cover a stream that drops after `200 OK` but before its first event (#45457, #44238, #29808) | open on 2 of 3 routes; `/v1/messages` fixed in 1.106.0rc2 |
 | 2026-10-15 | [`2026-10-15-loom-idp-bypass/`](2026-10-15-loom-idp-bypass/) | Loom for AWS served every request as super-admin when no IdP was configured; the first fix was spoofable via `X-Forwarded-For` when `FORWARDED_ALLOW_IPS` was widened (CVE-2026-103956, GHSA-vgmj-998f-r8mp) | fixed 2026-08-04 + hardening 2026-10-06 |
 | 2026-10-16 | [`2026-10-16-ollama-context-cap/`](2026-10-16-ollama-context-cap/) | Ollama's OpenAI-compatible endpoint ignores `num_ctx`; with the VRAM-based default (4,096 below 24 GiB) long conversations are truncated from the front with HTTP 200 (PR #16825, hermes-agent#43900) | open / by design; workarounds available |
+| 2026-10-17 | [`2026-10-17-agent-sdk-resume-flag/`](2026-10-17-agent-sdk-resume-flag/) | Claude Agent SDK (Python) passed `resume` as two argv tokens, so a session ID starting with `-` became a CLI flag (CVE-2026-96620, GHSA-h4mw-j7qp-8mwm); TypeScript fixed the same way without an advisory | fixed 2026-07-17; advisory in global DB 2026-10-16 |
 
 Each folder has its own `README.md` with exact affected and fixed versions, `reproduce.py` (BEFORE), `fix.py` (AFTER), `detect.py`, and `tests/`.

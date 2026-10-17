@@ -1,0 +1,4 @@
+# The scripts and tests are standard library only (Python 3.11+).
+# The real-release runs use two venvs created by setup_venvs.sh:
+#   .venv-0.2.120: claude-agent-sdk==0.2.120  (last affected, 2026-07-15)
+#   .venv-0.2.121: claude-agent-sdk==0.2.121  (first fixed, 2026-07-17)
