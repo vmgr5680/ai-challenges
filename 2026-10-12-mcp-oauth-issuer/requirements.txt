@@ -1,0 +1,5 @@
+# Core files (pattern.py, reproduce.py, fix.py, detect.py, tests) use the standard library only.
+# warn_check.py runs against each pinned release in its own venv:
+#   mcp==2.1.1   (last affected 2.x)
+#   mcp==2.2.0   (fixed 2.x)
+#   mcp==1.30.0  (fixed 1.x)

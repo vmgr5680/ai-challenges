@@ -1,0 +1,29 @@
+$ python3 reproduce.py
+server   : http://127.0.0.1:11500  model: qwen2.5:1.5b
+sent     : 16 messages, 5415 prompt tokens (measured)
+v1 plain              : HTTP 200, prompt_tokens=3612, finish_reason=stop, answer='Elixir'
+v1 + options.num_ctx  : HTTP 200, prompt_tokens=3612, finish_reason=stop, answer='Elixir'
+api/ps   : qwen2.5:1.5b loaded with context_length=4096
+
+turn  sent_tokens  processed_tokens  answer
+   0           77                77  'BLUE-HERON'
+   1          962               962  'BLUE-HERON'
+   2         1849              1849  'BLUE-HERON'
+   3         2739              2739  'BLUE-HERON'
+   4         3631              3631  'BLUE-HERON'
+   5         4523              3607  'Elixir'
+   6         5415              3612  'Elixir'
+
+$ python3 fix.py
+A. /api/chat + options.num_ctx      : HTTP 200, prompt_eval_count=5415, answer='BLUE-HERON'
+B. /v1 + derived model (num_ctx)    : HTTP 200, prompt_tokens=5415, answer='BLUE-HERON'
+D. /api/chat + truncate:false       : HTTP 400, request (5415 tokens) exceeds the available context size (4096 tokens), try increasing it
+E. guard on default /v1, turn 5   : ContextTruncated: truncated: prompt_tokens 3631 -> 3607 while messages grew 12 -> 14
+
+$ python3 detect.py qwen2.5:1.5b qwen-ctx16k
+qwen2.5:1.5b                 working=4096 trained=32768 modelfile_num_ctx=-  AT RISK
+qwen-ctx16k                  working=16384 trained=32768 modelfile_num_ctx=16384  ok
+AT RISK = /v1 clients get the working context; longer conversations lose their start silently.
+
+$ OLLAMA_URL=<server with OLLAMA_CONTEXT_LENGTH=16384> python3 fix.py --server-env
+C. /v1, server OLLAMA_CONTEXT_LENGTH : HTTP 200, prompt_tokens=5415, answer='BLUE-HERON'

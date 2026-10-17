@@ -1,0 +1,50 @@
+$ python3 reproduce.py
+BEFORE (check runs only if an expected issuer was discovered)
+scenario                         expected issuer              check    outcome
+discovery names an auth server   https://login.example.test   ran      rejected
+discovery returns nothing        None                         skipped  accepted
+
+$ python3 fix.py
+AFTER (expected issuer derived up front, fail closed)
+scenario                         expected issuer              check    outcome
+discovery names an auth server   https://login.example.test   ran      rejected
+discovery returns nothing        https://tools.example.test   ran      rejected
+
+$ python3 detect.py samples/client_before.py
+mcp: not installed in this interpreter
+samples/client_before.py:8  ClientCredentialsOAuthProvider without issuer=  -> pass your authorization server's issuer URL
+samples/client_before.py:15  RFC7523OAuthClientProvider has no issuer option  -> migrate to PrivateKeyJWTOAuthProvider(issuer=...)
+samples/client_before.py:17  OAuthClientProvider  -> after upgrading, clear stored client info once so it re-registers
+
+$ python3 detect.py samples/client_after.py
+mcp: not installed in this interpreter
+source: no OAuth providers needing follow-up found
+
+$ .venv-2.1.1/bin/python warn_check.py "last affected, Aug 2026"
+[last affected, Aug 2026]
+  accepts issuer=        : False
+  warning when omitted   : none
+  shown by default       : -
+  fails the CI guard     : -
+$ .venv-2.2.0/bin/python warn_check.py "fixed, current line, 7 Sep 2026"
+[fixed, current line, 7 Sep 2026]
+  accepts issuer=        : True
+  warning when omitted   : MCPDeprecationWarning
+  shown by default       : True
+  fails the CI guard     : True
+$ .venv-1.30.0/bin/python warn_check.py "fixed, older line, 7 Sep 2026"
+[fixed, older line, 7 Sep 2026]
+  accepts issuer=        : True
+  warning when omitted   : DeprecationWarning
+  shown by default       : False
+  fails the CI guard     : True
+
+$ .venv-2.2.0/bin/python detect.py | head -1
+mcp 2.2.0: not in the affected range
+$ .venv-2.1.1/bin/python detect.py | head -1
+mcp 2.1.1: AFFECTED - upgrade
+
+$ python3 -m unittest discover -s tests
+Ran 9 tests in 2.725s
+
+OK

@@ -1,0 +1,10 @@
+# One venv per release; see README. Exact versions used for the published outputs:
+# .venv-2.27.1  pydantic-ai-slim[web]==2.27.1   (affected by both advisories)
+# .venv-2.28.0  pydantic-ai-slim[web]==2.28.0   (content-type fix only)
+# .venv-2.30.0  pydantic-ai-slim[web]==2.30.0   (both fixes)
+# Shared transitive pins (identical in all three venvs):
+httpx==0.28.1
+pydantic==2.14.0
+starlette==1.7.0
+uvicorn==0.54.0
+pydantic_core==2.50.0

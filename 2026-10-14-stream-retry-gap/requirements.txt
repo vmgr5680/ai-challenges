@@ -1,0 +1,5 @@
+# Toy model, stream_guard.py, detect.py, tests: Python stdlib only.
+# Pinned-release checks (one venv per line, Python 3.13):
+#   litellm[proxy]==1.104.0
+#   litellm[proxy]==1.105.1
+#   litellm[proxy]==1.106.0rc2

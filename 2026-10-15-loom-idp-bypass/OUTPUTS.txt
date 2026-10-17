@@ -1,0 +1,38 @@
+BEFORE  (remote client, no credentials, GET /api/settings)
+1. before the fix, fresh deployment                    -> 200 as local-dev ['t-admin', 'g-admins-super']
+2. first fix, opt-in unset                             -> 401 No identity provider configured
+3. first fix, opt-in left on, default proxy trust      -> 401 No identity provider configured
+4.   same, plus X-Forwarded-For: 127.0.0.1             -> 401 No identity provider configured
+5. first fix, opt-in on, FORWARDED_ALLOW_IPS='*'       -> 401 No identity provider configured
+6.   same, plus X-Forwarded-For: 127.0.0.1             -> 200 as local-dev ['t-admin', 'g-admins-super']
+7.   same, via load balancer that appends real IP      -> 200 as local-dev ['t-admin', 'g-admins-super']
+
+AFTER  (same remote client, GET /api/settings)
+A1. follow-up fix, spoofed X-Forwarded-For             -> 401 No identity provider configured
+A2. follow-up fix, via load balancer                   -> 401 No identity provider configured
+A3. follow-up fix, real developer on loopback          -> 200 as local-dev ['t-admin', 'g-admins-super']
+B1. first fix + trust LB range only, spoofed           -> 401 No identity provider configured
+B2. first fix + trust LB range only, via LB            -> 401 No identity provider configured
+C1. setup token design, spoofed, no token              -> 401 Identity provider not configured; setup token required
+C2. setup token design, loopback, no token             -> 401 Identity provider not configured; setup token required
+C3. setup token, operator registers IdP (POST)         -> 200 as bootstrap ['setup']
+C4. setup token, operator reads settings               -> 403 Forbidden
+C5. IdP registered, valid user token                   -> 200 as alice ['g-admins-super']
+
+Startup check (follow-up fix)
+opt-in + FORWARDED_ALLOW_IPS='*'                       -> refuses to start (FORWARDED_ALLOW_IPS='*' trusts non-loopback proxies)
+opt-in + container runtime                             -> refuses to start (container runtime detected)
+opt-in on a laptop, defaults                           -> starts
+
+$ python detect.py --source upstream/auth_v1.6.0.py
+source  VULNERABLE no IdP => super-admin for every request (pre-fix code)
+$ python detect.py --source upstream/auth_v1.6.1.py
+source  PARTIAL    opt-in + loopback check only; spoofable if the opt-in is set and proxy trust is widened
+$ python detect.py --source upstream/auth_v1.8.1.py
+source  PATCHED    opt-in, loopback, forwarding-header refusal and startup check present
+$ python detect.py --env samples/task.env
+env     HIGH  LOOM_ALLOW_UNAUTHENTICATED_LOCAL_DEV is set: remove it from any deployed environment
+env     HIGH  FORWARDED_ALLOW_IPS='*' trusts X-Forwarded-For from anyone: set your load balancer's range
+env     CHECK LOOM_COGNITO_USER_POOL_ID unset: confirm an external IdP is active before exposing the backend
+
+18 passed in 0.26s

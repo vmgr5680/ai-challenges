@@ -1,0 +1,8 @@
+# A typical gateway config: retries on, no fallbacks. Never run; detect.py scans it.
+model_list:
+  - model_name: gemini-flash
+    litellm_params:
+      model: vertex_ai/gemini-flash
+router_settings:
+  num_retries: 2
+  timeout: 180

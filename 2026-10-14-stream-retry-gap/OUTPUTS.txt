@@ -1,0 +1,82 @@
+# Real outputs quoted in the article. Produced 2026-10-14 on macOS, Python 3.13 venvs.
+
+$ python3 reproduce.py
+BEFORE  retry wraps open_stream() only, num_retries=2
+        upstream script: attempt 1 drops before first event, attempt 2+ ok
+        retry loop returned after 1 attempt(s): it counted a success
+        caller got: StreamDropped(Connection closed.) while reading the body
+        upstream attempts: 1  (retries used: 0 of 2)
+
+$ python3 fix.py
+AFTER   retry loop holds the first event, num_retries=2
+        drop, then ok                      attempts=2  caller got 'Hello!'
+        drop, drop, then ok                attempts=3  caller got 'Hello!'
+        drops every time (budget spent)    attempts=3  caller got StreamDropped(Connection closed.)
+
+$ .venv-1.104.0/bin/python litellm_probe.py
+upstream drops the 1st stream before its first event; Router num_retries=2
+  /chat/completions        upstream attempts=1  NOT retried  caller saw: raised APIConnectionError
+  /v1/messages             upstream attempts=1  NOT retried  caller saw: raised ReadError
+  streamGenerateContent    upstream attempts=1  NOT retried  caller saw: raised ReadError
+
+$ .venv-1.105.1/bin/python litellm_probe.py
+upstream drops the 1st stream before its first event; Router num_retries=2
+  /chat/completions        upstream attempts=1  NOT retried  caller saw: raised APIConnectionError
+  /v1/messages             upstream attempts=1  NOT retried  caller saw: raised ReadError
+  streamGenerateContent    upstream attempts=1  NOT retried  caller saw: raised ReadError
+
+$ .venv-1.106.0rc2/bin/python litellm_probe.py
+upstream drops the 1st stream before its first event; Router num_retries=2
+  /chat/completions        upstream attempts=1  NOT retried  caller saw: raised APIConnectionError
+  /v1/messages             upstream attempts=2  retried      caller saw: stream completed: got 'Hello'
+  streamGenerateContent    upstream attempts=1  NOT retried  caller saw: raised ReadError
+
+$ .venv-1.105.1/bin/python alternatives/fallbacks_probe.py
+fallbacks=False chat     hits=1 -> APIConnectionError during iterate
+fallbacks=False messages hits=1 -> ReadError during iterate
+fallbacks=False genai    hits=1 -> ReadError during iterate
+fallbacks=True  chat     hits=2 -> ok
+fallbacks=True  messages hits=2 -> ok
+fallbacks=True  genai    hits=1 -> ReadError during iterate
+
+$ .venv-1.106.0rc2/bin/python alternatives/fallbacks_probe.py
+fallbacks=False chat     hits=1 -> APIConnectionError during iterate
+fallbacks=False messages hits=2 -> ok
+fallbacks=False genai    hits=1 -> ReadError during iterate
+fallbacks=True  chat     hits=2 -> ok
+fallbacks=True  messages hits=2 -> ok
+fallbacks=True  genai    hits=1 -> ReadError during iterate
+
+$ .venv-1.105.1/bin/python litellm_guarded.py
+litellm 1.105.1    + first_chunk_retry(retries=2)
+  /chat/completions        upstream attempts=2  caller saw: stream completed: got 'Hello'
+  /v1/messages             upstream attempts=2  caller saw: stream completed: got 'Hello'
+  streamGenerateContent    upstream attempts=2  caller saw: stream completed: got 'Hello'
+
+$ .venv-1.105.1/bin/python proxy_probe.py
+litellm proxy 1.105.1    (router num_retries: 2)
+ raw HTTP client, no client-side retries:
+  /chat/completions        upstream attempts=1  client saw: HTTP 500, an HTTP error (a client can retry this)
+  /v1/messages             upstream attempts=1  client saw: HTTP 500, an HTTP error (a client can retry this)
+  streamGenerateContent    upstream attempts=1  client saw: HTTP 500, an HTTP error (a client can retry this)
+ OpenAI SDK client on /chat/completions:
+  SDK default retries      upstream attempts=2  client saw: got 'Hello'
+  SDK retries off          upstream attempts=1  client saw: InternalServerError (HTTP 500)
+  retries off + guard      upstream attempts=2  client saw: got 'Hello'
+
+$ .venv-1.106.0rc2/bin/python proxy_probe.py
+litellm proxy 1.106.0rc2    (router num_retries: 2)
+ raw HTTP client, no client-side retries:
+  /chat/completions        upstream attempts=1  client saw: HTTP 500, an HTTP error (a client can retry this)
+  /v1/messages             upstream attempts=2  client saw: HTTP 200, stream completed: got 'Hello'
+  streamGenerateContent    upstream attempts=1  client saw: HTTP 500, an HTTP error (a client can retry this)
+ OpenAI SDK client on /chat/completions:
+  SDK default retries      upstream attempts=2  client saw: got 'Hello'
+  SDK retries off          upstream attempts=1  client saw: InternalServerError (HTTP 500)
+  retries off + guard      upstream attempts=2  client saw: got 'Hello'
+
+$ python3 detect.py samples
+litellm not installed in this interpreter (scanning files only)
+  AT RISK  samples/agent_unguarded.py: line 3: streaming call with no first-chunk retry: stream = await router.acompletion(model="chat", messages=[{"role": "user", "cont
+  AT RISK  samples/proxy_config_retries_only.yaml: num_retries is set but there are no fallbacks: a stream dropped before its first event gets ONE upstream attempt
+exit=1

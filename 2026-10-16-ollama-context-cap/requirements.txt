@@ -1,0 +1,2 @@
+# No third-party dependencies: Python standard library only.
+# Needs a running Ollama server for reproduce.py / fix.py / detect.py and the live tests.

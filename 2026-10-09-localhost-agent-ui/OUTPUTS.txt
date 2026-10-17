@@ -1,0 +1,19 @@
+# Real outputs, 2026-10-09 (Python 3.13, macOS)
+BEFORE  (last release before the fixes, 11 Aug 2026)
+  A. your own chat tab               HTTP 200  TOOL RAN
+  B. any website (simple request)    HTTP 200  TOOL RAN
+  C. any website (DNS rebinding)     HTTP 200  TOOL RAN
+BEFORE  (content-type fix only, 12 Aug 2026)
+  A. your own chat tab               HTTP 200  TOOL RAN
+  B. any website (simple request)    HTTP 415  blocked 
+  C. any website (DNS rebinding)     HTTP 200  TOOL RAN
+AFTER (upgrade)  (both fixes, 14 Aug 2026)
+  A. your own chat tab               HTTP 200  TOOL RAN
+  B. any website (simple request)    HTTP 415  blocked 
+  C. any website (DNS rebinding)     HTTP 421  blocked 
+AFTER (LocalOnlyGuard)  (last release before the fixes, 11 Aug 2026)
+  A. your own chat tab               HTTP 200  TOOL RAN
+  B. any website (simple request)    HTTP 415  blocked 
+  C. any website (DNS rebinding)     HTTP 421  blocked 
+
+# live curl probe (uvicorn on 127.0.0.1): affected release -> 200, 500; fixed release -> 421, 415
