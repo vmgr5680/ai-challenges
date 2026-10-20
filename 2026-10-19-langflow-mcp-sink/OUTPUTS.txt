@@ -1,0 +1,46 @@
+# Real outputs, 2026-10-19, Python 3.14.6
+
+$ python3 reproduce.py
+BEFORE (toy): policy at the door only
+  1. REST API: add server 'touch'        -> rejected (command 'touch' is not allowed)        MARKER on disk: no
+  2. flow JSON with 'touch' in its node  -> launched                                         MARKER on disk: yes
+  3. clean flow + run-time tweak         -> launched                                         MARKER on disk: yes
+  4. clean flow, allowed server          -> launched                                         MARKER on disk: no
+
+Real releases (source read from the wheels, nothing executed):
+last affected, published 7 Jul 2026
+  door  MCPServerConfig command allowlist   : yes
+  sink  _connect_to_server validates command: NO
+first fixed, published 23 Jul 2026
+  door  MCPServerConfig command allowlist   : yes
+  sink  _connect_to_server validates command: yes
+
+$ python3 fix.py
+AFTER (toy): policy at the sink
+  1. REST API: add server 'touch'        -> rejected (command 'touch' is not allowed)        MARKER on disk: no
+  2. flow JSON with 'touch' in its node  -> rejected (command 'touch' is not allowed)        MARKER on disk: no
+  3. clean flow + run-time tweak         -> rejected (command 'touch' is not allowed)        MARKER on disk: no
+  4. clean flow, allowed server          -> launched                                         MARKER on disk: no
+
+lfx 1.10.3 validate_mcp_stdio_config (no env overrides set)
+  touch /tmp/marker                              REJECTED: Command 'touch' is not allowed
+  bash -c touch /tmp/marker                      REJECTED: Command 'touch' is not allowed
+  python3 -c print('hi')                         REJECTED: Flag -c or /c is only allowed with shell wrappers (cmd/sh/bash), not with 'python3'
+  node server.js  env={'NODE_OPTIONS': '--require ./x.js'} REJECTED: Environment variable 'NODE_OPTIONS' is not allowed
+  npx @modelcontextprotocol/server-everything    allowed
+  uvx some-unknown-package                       allowed
+
+$ python3 detect.py --version 1.10.2 --flows examples
+versions : langflow 1.10.2 -> AFFECTED, upgrade to 1.10.3 or later
+env      : LANGFLOW_AUTO_LOGIN=true (default) -> anyone who can reach the server gets a token
+env      : LANGFLOW_MCP_SERVER_ALLOWED_PACKAGES unset -> npx/uvx may run any package (1.11.0+ can restrict)
+flows    : scanning 2 JSON file(s) under examples
+  ok   flow_clean.json: 'npx @modelcontextprotocol/server-everything'
+  FLAG flow_planted.json: 'touch MARKER' -> command 'touch' not on the allowlist
+       at $.data.nodes[0].data.node.template.mcp_server.value.config
+result   : 3 finding(s)
+
+$ python3 -m unittest discover -s tests
+Ran 10 tests in 0.102s
+
+OK

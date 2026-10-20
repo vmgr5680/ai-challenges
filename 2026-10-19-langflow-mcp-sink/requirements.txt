@@ -1,0 +1,4 @@
+# No third-party dependencies. Standard library only (Python 3.11+).
+# wheels.py downloads (does not install) these real wheels for inspection:
+#   lfx==1.10.2, langflow-base==0.10.2  (last affected, 2026-07-07)
+#   lfx==1.10.3, langflow-base==0.10.3  (first fixed, 2026-07-23)

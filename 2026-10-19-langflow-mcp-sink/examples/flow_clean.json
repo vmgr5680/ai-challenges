@@ -1,0 +1,24 @@
+{
+  "name": "Support notes (illustrative export, trimmed)",
+  "data": {
+    "nodes": [
+      {
+        "id": "MCPTools-1",
+        "data": {
+          "type": "MCPTools",
+          "node": {
+            "template": {
+              "mcp_server": {
+                "value": {
+                  "name": "notes",
+                  "config": {"command": "npx", "args": ["@modelcontextprotocol/server-everything"], "env": {}}
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "edges": []
+  }
+}
