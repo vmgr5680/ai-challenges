@@ -1,0 +1,53 @@
+$ npm run reproduce
+BEFORE: affected release, published 28 Sep 2026
+
+A. one McpServer at module scope, new transport per request (old README)
+  alice tool result: alice: invoice #A-1001, card ending 1111
+  alice notes seen  : alice
+  bob   tool result: bob: invoice #B-2002, card ending 2222
+  bob   notes seen  : alice, bob  <- received alice's note
+
+B. one McpServer and one stateless transport for every request
+  alice tool result: ERROR REQUEST_TIMEOUT Request timed out
+  alice notes seen  : none
+  bob   tool result: alice: invoice #A-1001, card ending 1111
+  bob   notes seen  : alice, bob  <- received alice's note
+
+$ npm run fix
+AFTER
+
+1. fixed release, old shared wiring (A)
+  alice tool result: ERROR could not connect
+  alice notes seen  : none
+  bob   tool result: ERROR could not connect
+  bob   notes seen  : none
+  server error: ALREADY_CONNECTED: Use a separate Server instance per connection: this instance is already connected to a transport. To connect it to a new transport, call close() first.
+
+2. fixed release, shared transport (B)
+  alice tool result: ERROR could not connect
+  alice notes seen  : none
+  bob   tool result: ERROR could not connect
+  bob   notes seen  : none
+  server error: Error: Stateless transport cannot be reused across requests. Create a new transport per request.
+
+3. fixed release, new McpServer + transport per request
+  alice tool result: alice: invoice #A-1001, card ending 1111
+  alice notes seen  : alice
+  bob   tool result: bob: invoice #B-2002, card ending 2222
+  bob   notes seen  : bob
+
+4. affected release, new McpServer + transport per request
+  alice tool result: alice: invoice #A-1001, card ending 1111
+  alice notes seen  : alice
+  bob   tool result: bob: invoice #B-2002, card ending 2222
+  bob   notes seen  : bob
+
+$ node detect.mjs examples/leaky
+@modelcontextprotocol/server installed: not found -> n/a
+SHARED  server.mjs:6  server built at module scope
+-> create the McpServer and transport per request, or per session with sessionIdGenerator
+(exit 1)
+$ node detect.mjs examples/fixed
+@modelcontextprotocol/server installed: not found -> n/a
+shared server/transport at module scope: none found
+(exit 0)

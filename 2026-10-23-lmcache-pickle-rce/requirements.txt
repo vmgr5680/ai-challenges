@@ -1,0 +1,6 @@
+# reproduce.py and fix.py use the standard library only.
+# detect.py needs these two:
+packaging>=23
+psutil>=5.9   # optional: without it, the port-bind check is skipped
+# tests:
+pytest>=8

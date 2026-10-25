@@ -1,0 +1,16 @@
+{
+  "name": "mcp-shared-server-leak",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "reproduce": "node reproduce.mjs",
+    "fix": "node fix.mjs",
+    "detect": "node detect.mjs .",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "server-affected": "npm:@modelcontextprotocol/server@2.2.0",
+    "server-fixed": "npm:@modelcontextprotocol/server@2.3.0",
+    "@modelcontextprotocol/client": "2.3.0"
+  }
+}
